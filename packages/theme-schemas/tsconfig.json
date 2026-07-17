@@ -1,0 +1,4 @@
+{
+  "extends": "@grifto/config/tsconfig/library",
+  "include": ["src"]
+}

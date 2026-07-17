@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@grifto/ui/styles.css";
+
+/* Scan shared packages for class usage. */
+@source "../../../packages/ui/src";
+@source "../../../packages/theme-runtime/src";

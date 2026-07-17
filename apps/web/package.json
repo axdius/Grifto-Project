@@ -1,0 +1,41 @@
+{
+  "name": "@grifto/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@grifto/contracts": "workspace:*",
+    "@grifto/mock-api": "workspace:*",
+    "@grifto/platform-services": "workspace:*",
+    "@grifto/sdk": "workspace:*",
+    "@grifto/theme-runtime": "workspace:*",
+    "@grifto/ui": "workspace:*",
+    "@grifto/utils": "workspace:*",
+    "@hookform/resolvers": "^3.10.0",
+    "qrcode": "^1.5.4",
+    "@tanstack/react-query": "^5.66.0",
+    "next": "^15.3.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.54.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@grifto/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^22.13.0",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.20.0",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.24.0"
+  }
+}

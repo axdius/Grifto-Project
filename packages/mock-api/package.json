@@ -1,0 +1,24 @@
+{
+  "name": "@grifto/mock-api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./browser": "./src/browser.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@grifto/contracts": "workspace:*",
+    "msw": "^2.7.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@grifto/config": "workspace:*",
+    "typescript": "^5.7.0"
+  }
+}
