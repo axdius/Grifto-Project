@@ -1,7 +1,6 @@
 {
   "extends": "@grifto/config/tsconfig/nextjs",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     }
