@@ -25,7 +25,6 @@ import { getSetting } from "./settings";
 const MAX_SLIDES = 4;
 const MOBILE_MQ = "(max-width: 767px)";
 const ADAPT_MIN_PX = 280;
-const ADAPT_MAX_PX = 900;
 const FALLBACK_HEIGHT_PX = 700;
 
 const FIXED_HEIGHTS: Record<string, number> = {
@@ -86,7 +85,7 @@ function useCarouselHeightPx(
       if (cancelled || !naturalWidth || !naturalHeight) return;
       const width = containerRef.current?.clientWidth || window.innerWidth;
       const next = Math.round(width * (naturalHeight / naturalWidth));
-      setAdaptHeight(Math.min(ADAPT_MAX_PX, Math.max(ADAPT_MIN_PX, next)));
+      setAdaptHeight(Math.max(ADAPT_MIN_PX, next));
     };
 
     const onResize = () => {
@@ -131,7 +130,7 @@ function SlideContent({
 }) {
   const Link = context.LinkComponent;
   const Image = context.ImageComponent;
-  const imageClass = "absolute inset-0 h-full w-full object-contain";
+  const imageClass = "absolute inset-0 h-full w-full object-cover object-center";
 
   const cta =
     slide.ctaLabel && slide.ctaHref ? (
@@ -154,9 +153,6 @@ function SlideContent({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {/* Letterbox fill behind object-contain images */}
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-brand-600 to-gold-500" />
-
       {slide.imageUrl ? (
         slide.mobileImageUrl ? (
           <picture>
