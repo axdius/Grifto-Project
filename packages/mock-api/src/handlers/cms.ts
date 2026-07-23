@@ -44,6 +44,8 @@ export const cmsHandlers = [
         title: body.title,
         body: body.body,
         imageUrl: body.imageUrl ?? null,
+        ctaLabel: body.ctaLabel ?? null,
+        ctaHref: body.ctaHref ?? null,
         published: body.published,
         sortOrder: data.cmsEntries.filter((e) => e.kind === body.kind).length,
         updatedAt: new Date().toISOString(),

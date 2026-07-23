@@ -78,6 +78,7 @@ export function ThemeEditor() {
   const discard = useDiscardThemeDraft();
   const testimonials = usePublicCmsEntries("testimonial");
   const faqs = usePublicCmsEntries("faq");
+  const banners = usePublicCmsEntries("banner");
 
   const document = useEditorStore((s) => s.document);
   const load = useEditorStore((s) => s.load);
@@ -124,6 +125,7 @@ export function ThemeEditor() {
       body: t.body,
     })),
     faqs: (faqs.data?.items ?? []).map((f) => ({ id: f.id, title: f.title, body: f.body })),
+    banners: banners.data?.items ?? [],
   };
 
   function handleSave(onSuccess?: () => void) {

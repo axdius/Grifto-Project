@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLogout } from "@grifto/sdk";
 import { Button } from "@grifto/ui";
+import { WalletChip } from "@/features/wallet/components/wallet-chip";
 import { useSession } from "../hooks/use-session";
 
 /**
@@ -37,12 +38,7 @@ export function HeaderAuthActions() {
 
   return (
     <div className="ml-2 flex items-center gap-2">
-      <Link
-        href="/dashboard/wallet"
-        className="rounded-full bg-gold-100 px-3 py-1.5 text-sm font-medium text-gold-700 hover:bg-gold-300/50"
-      >
-        Wallet
-      </Link>
+      <WalletChip />
       <Link
         href="/dashboard"
         className="rounded-lg px-3 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"

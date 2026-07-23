@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePublicCmsEntries, usePublishedTheme } from "@grifto/sdk";
 import { RenderThemeDocument, type ThemeRenderContext } from "@grifto/theme-runtime";
@@ -13,6 +14,7 @@ export function ThemedHome() {
   const theme = usePublishedTheme();
   const testimonials = usePublicCmsEntries("testimonial");
   const faqs = usePublicCmsEntries("faq");
+  const banners = usePublicCmsEntries("banner");
 
   if (theme.isPending) {
     return (
@@ -37,10 +39,23 @@ export function ThemedHome() {
       body: t.body,
     })),
     faqs: (faqs.data?.items ?? []).map((f) => ({ id: f.id, title: f.title, body: f.body })),
+    banners: banners.data?.items ?? [],
     LinkComponent: ({ href, className, children }) => (
       <Link href={href} className={className}>
         {children}
       </Link>
+    ),
+    // Only local /public paths go through the optimizer; blob/data/external
+    // URLs (media library uploads, CMS-entered links) bypass it.
+    ImageComponent: ({ src, alt, className }) => (
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        sizes="100vw"
+        className={className}
+        unoptimized={!src.startsWith("/")}
+      />
     ),
   };
 

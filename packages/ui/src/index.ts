@@ -7,4 +7,5 @@ export { Card, CardHeader, CardTitle, CardBody } from "./components/card";
 export { Badge, type BadgeProps } from "./components/badge";
 export { Progress } from "./components/progress";
 export { Dialog } from "./components/dialog";
+export { Drawer } from "./components/drawer";
 export { EmptyState } from "./components/empty-state";

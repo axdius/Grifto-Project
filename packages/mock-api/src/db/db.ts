@@ -2,7 +2,7 @@ import { emptyDb, type MockDbData } from "./schema";
 import { seedData } from "./seeds";
 
 /** Bump the version suffix whenever MockDbData gains collections — stale persisted DBs are discarded and reseeded. */
-const STORAGE_KEY = "grifto.mockdb.v6";
+const STORAGE_KEY = "grifto.mockdb.v7";
 
 /**
  * The mock database: in-memory, persisted to localStorage so data survives

@@ -165,6 +165,8 @@ export interface DbCmsEntry {
   title: string;
   body: string;
   imageUrl: string | null;
+  ctaLabel: string | null;
+  ctaHref: string | null;
   published: boolean;
   sortOrder: number;
   updatedAt: string;

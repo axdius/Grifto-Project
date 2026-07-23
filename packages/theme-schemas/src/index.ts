@@ -24,6 +24,33 @@ export interface SectionDefinition {
 }
 
 export const sectionRegistry: Record<string, SectionDefinition> = {
+  hero_carousel: {
+    type: "hero_carousel",
+    label: "Hero Carousel",
+    description: "Rotating hero slides sourced from CMS banners (max 4).",
+    fields: [
+      {
+        key: "autoplayDelayMs",
+        label: "Autoplay delay (ms)",
+        type: "number",
+        default: 5000,
+        min: 2000,
+        max: 15000,
+      },
+      { key: "showOverlay", label: "Dark overlay for readability", type: "toggle", default: true },
+      {
+        key: "heightVariant",
+        label: "Height",
+        type: "select",
+        default: "standard",
+        options: [
+          { value: "compact", label: "Compact" },
+          { value: "standard", label: "Standard" },
+          { value: "tall", label: "Tall" },
+        ],
+      },
+    ],
+  },
   hero_banner: {
     type: "hero_banner",
     label: "Hero Banner",

@@ -136,21 +136,27 @@ function EntryDialog({
   const update = useUpdateCmsEntry();
   const [title, setTitle] = useState(entry?.title ?? "");
   const [body, setBody] = useState(entry?.body ?? "");
+  const [ctaLabel, setCtaLabel] = useState(entry?.ctaLabel ?? "");
+  const [ctaHref, setCtaHref] = useState(entry?.ctaHref ?? "");
   const [error, setError] = useState<string | null>(null);
   const busy = create.isPending || update.isPending;
+  const isBanner = kind === "banner";
 
   function submit() {
     if (!title.trim()) return setError(`${titleLabel} is required`);
     if (!body.trim()) return setError(`${bodyLabel} is required`);
     setError(null);
+    const cta = isBanner
+      ? { ctaLabel: ctaLabel.trim() || null, ctaHref: ctaHref.trim() || null }
+      : {};
     if (entry) {
       update.mutate(
-        { entryId: entry.id, body: { title: title.trim(), body: body.trim() } },
+        { entryId: entry.id, body: { title: title.trim(), body: body.trim(), ...cta } },
         { onSuccess: onClose, onError: (e) => setError(e.message) },
       );
     } else {
       create.mutate(
-        { kind, title: title.trim(), body: body.trim(), published: true },
+        { kind, title: title.trim(), body: body.trim(), published: true, ...cta },
         { onSuccess: onClose, onError: (e) => setError(e.message) },
       );
     }
@@ -171,6 +177,26 @@ function EntryDialog({
             className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-brand-500 focus:outline-2 focus:outline-offset-0 focus:outline-brand-200"
           />
         </Field>
+        {isBanner ? (
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="CTA button label" htmlFor="c-cta-label">
+              <Input
+                id="c-cta-label"
+                value={ctaLabel}
+                placeholder="e.g. Explore"
+                onChange={(e) => setCtaLabel(e.target.value)}
+              />
+            </Field>
+            <Field label="CTA link" htmlFor="c-cta-href">
+              <Input
+                id="c-cta-href"
+                value={ctaHref}
+                placeholder="e.g. /register"
+                onChange={(e) => setCtaHref(e.target.value)}
+              />
+            </Field>
+          </div>
+        ) : null}
         {error ? (
           <p className="text-sm text-danger-600" role="alert">
             {error}

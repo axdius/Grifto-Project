@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { ThemeDocument, ThemeSection } from "@grifto/contracts";
-import { sectionDefaults } from "@grifto/theme-schemas";
+import { HeroCarousel } from "./hero-carousel";
+import { getSetting } from "./settings";
 
 /**
  * JSON theme document → React renderer.
@@ -11,16 +12,24 @@ import { sectionDefaults } from "@grifto/theme-schemas";
  * ThemeRenderContext supplied by the host — the runtime performs no fetching.
  */
 
+export interface ThemeBannerSlide {
+  id: string;
+  title?: string | null;
+  body?: string | null;
+  imageUrl?: string | null;
+  ctaLabel?: string | null;
+  ctaHref?: string | null;
+}
+
 export interface ThemeRenderContext {
   testimonials?: { id: string; title: string; body: string }[];
   faqs?: { id: string; title: string; body: string }[];
+  /** CMS banner entries feeding the hero_carousel section. */
+  banners?: ThemeBannerSlide[];
   /** Host link component (Next's Link on web; plain anchor in the editor). */
   LinkComponent?: (props: { href: string; className?: string; children: ReactNode }) => ReactNode;
-}
-
-function getSetting<T>(section: ThemeSection, key: string): T {
-  const defaults = sectionDefaults(section.type);
-  return (section.settings[key] ?? defaults[key]) as T;
+  /** Host image component (Next's Image on web; plain img in the editor). */
+  ImageComponent?: (props: { src: string; alt: string; className?: string }) => ReactNode;
 }
 
 function HostLink({
@@ -200,6 +209,8 @@ export function RenderSection({
   context?: ThemeRenderContext;
 }) {
   switch (section.type) {
+    case "hero_carousel":
+      return <HeroCarousel section={section} context={context} />;
     case "hero_banner":
       return <HeroBanner section={section} context={context} />;
     case "rich_text":
