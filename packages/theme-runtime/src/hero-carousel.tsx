@@ -1,6 +1,15 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState, type ReactNode } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import type { ThemeSection } from "@grifto/contracts";
@@ -14,12 +23,102 @@ import { getSetting } from "./settings";
  */
 
 const MAX_SLIDES = 4;
+const MOBILE_MQ = "(max-width: 767px)";
+const ADAPT_MIN_PX = 280;
+const ADAPT_MAX_PX = 900;
+const FALLBACK_HEIGHT_PX = 700;
 
-const heightClasses: Record<string, string> = {
-  compact: "h-[300px] sm:h-[360px]",
-  standard: "h-[380px] sm:h-[460px] lg:h-[520px]",
-  tall: "h-[460px] sm:h-[560px] lg:h-[640px]",
+const FIXED_HEIGHTS: Record<string, number> = {
+  small: 560,
+  medium: 700,
+  large: 850,
 };
+
+const VALID_VARIANTS = new Set(["adapt", "small", "medium", "large"]);
+
+function normalizeHeightVariant(raw: string): string {
+  return VALID_VARIANTS.has(raw) ? raw : "adapt";
+}
+
+function pickActiveImageUrl(slide: ThemeBannerSlide | undefined, isMobile: boolean): string | null {
+  if (!slide) return null;
+  if (isMobile && slide.mobileImageUrl) return slide.mobileImageUrl;
+  return slide.imageUrl ?? null;
+}
+
+function useIsMobile(): boolean {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia(MOBILE_MQ);
+    const update = () => setIsMobile(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+
+  return isMobile;
+}
+
+/** Resolves carousel height (px) for fixed variants or adapt-to-first-image. */
+function useCarouselHeightPx(
+  heightVariant: string,
+  firstSlide: ThemeBannerSlide | undefined,
+): { heightPx: number; containerRef: RefObject<HTMLElement | null> } {
+  const variant = normalizeHeightVariant(heightVariant);
+  const isMobile = useIsMobile();
+  const containerRef = useRef<HTMLElement | null>(null);
+  const [adaptHeight, setAdaptHeight] = useState(FALLBACK_HEIGHT_PX);
+
+  useEffect(() => {
+    if (variant !== "adapt") return;
+
+    const url = pickActiveImageUrl(firstSlide, isMobile);
+    if (!url) {
+      setAdaptHeight(FALLBACK_HEIGHT_PX);
+      return;
+    }
+
+    let cancelled = false;
+    const img = new window.Image();
+
+    const recompute = (naturalWidth: number, naturalHeight: number) => {
+      if (cancelled || !naturalWidth || !naturalHeight) return;
+      const width = containerRef.current?.clientWidth || window.innerWidth;
+      const next = Math.round(width * (naturalHeight / naturalWidth));
+      setAdaptHeight(Math.min(ADAPT_MAX_PX, Math.max(ADAPT_MIN_PX, next)));
+    };
+
+    const onResize = () => {
+      if (img.naturalWidth) recompute(img.naturalWidth, img.naturalHeight);
+    };
+
+    img.onload = () => recompute(img.naturalWidth, img.naturalHeight);
+    img.onerror = () => {
+      if (!cancelled) setAdaptHeight(FALLBACK_HEIGHT_PX);
+    };
+    img.src = url;
+
+    const ro = new ResizeObserver(onResize);
+    if (containerRef.current) ro.observe(containerRef.current);
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      cancelled = true;
+      ro.disconnect();
+      window.removeEventListener("resize", onResize);
+    };
+  }, [variant, firstSlide, isMobile, firstSlide?.imageUrl, firstSlide?.mobileImageUrl]);
+
+  if (variant !== "adapt") {
+    return {
+      heightPx: FIXED_HEIGHTS[variant] ?? FALLBACK_HEIGHT_PX,
+      containerRef,
+    };
+  }
+
+  return { heightPx: adaptHeight, containerRef };
+}
 
 function SlideContent({
   slide,
@@ -32,6 +131,7 @@ function SlideContent({
 }) {
   const Link = context.LinkComponent;
   const Image = context.ImageComponent;
+  const imageClass = "absolute inset-0 h-full w-full object-contain";
 
   const cta =
     slide.ctaLabel && slide.ctaHref ? (
@@ -54,21 +154,22 @@ function SlideContent({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {/* Background: image when provided, brand gradient fallback otherwise. */}
+      {/* Letterbox fill behind object-contain images */}
+      <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-brand-600 to-gold-500" />
+
       {slide.imageUrl ? (
-        Image ? (
-          <Image src={slide.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        slide.mobileImageUrl ? (
+          <picture>
+            <source media="(max-width: 767px)" srcSet={slide.mobileImageUrl} />
+            <img src={slide.imageUrl} alt="" loading="lazy" className={imageClass} />
+          </picture>
+        ) : Image ? (
+          <Image src={slide.imageUrl} alt="" className={imageClass} />
         ) : (
-          <img
-            src={slide.imageUrl}
-            alt=""
-            loading="lazy"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          <img src={slide.imageUrl} alt="" loading="lazy" className={imageClass} />
         )
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-brand-600 to-gold-500" />
-      )}
+      ) : null}
+
       {showOverlay ? <div className="absolute inset-0 bg-neutral-900/40" /> : null}
 
       <div className="relative z-10 mx-auto flex h-full max-w-6xl flex-col items-center justify-center gap-4 px-4 text-center sm:gap-6 sm:px-6">
@@ -127,13 +228,13 @@ function MultiSlideCarousel({
   slides,
   autoplayDelayMs,
   showOverlay,
-  heightClass,
+  heightStyle,
   context,
 }: {
   slides: ThemeBannerSlide[];
   autoplayDelayMs: number;
   showOverlay: boolean;
-  heightClass: string;
+  heightStyle: CSSProperties;
   context: ThemeRenderContext;
 }) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
@@ -162,7 +263,8 @@ function MultiSlideCarousel({
           {slides.map((slide, index) => (
             <div
               key={slide.id}
-              className={`min-w-0 flex-[0_0_100%] ${heightClass}`}
+              className="min-w-0 flex-[0_0_100%]"
+              style={heightStyle}
               role="group"
               aria-roledescription="slide"
               aria-label={`Slide ${index + 1} of ${slides.length}`}
@@ -204,34 +306,37 @@ export function HeroCarousel({
   const autoplayDelayMs = getSetting<number>(section, "autoplayDelayMs");
   const showOverlay = getSetting<boolean>(section, "showOverlay");
   const heightVariant = getSetting<string>(section, "heightVariant");
-  const heightClass = heightClasses[heightVariant] ?? heightClasses.standard!;
-
   const slides = (context.banners ?? []).slice(0, MAX_SLIDES);
+  const { heightPx, containerRef } = useCarouselHeightPx(heightVariant, slides[0]);
+  const heightStyle: CSSProperties = { height: heightPx };
 
   if (slides.length === 0) {
     return (
-      <section className={`flex items-center justify-center bg-neutral-100 ${heightClass}`}>
+      <section
+        ref={containerRef as RefObject<HTMLDivElement>}
+        className="flex items-center justify-center bg-neutral-100"
+        style={heightStyle}
+      >
         <p className="text-sm text-neutral-400">No published banners — add them in the CMS.</p>
       </section>
     );
   }
 
   if (slides.length === 1) {
-    // Single banner: static, no autoplay/arrows/dots.
     return (
-      <section className={heightClass}>
+      <section ref={containerRef as RefObject<HTMLDivElement>} style={heightStyle}>
         <SlideContent slide={slides[0]!} showOverlay={showOverlay} context={context} />
       </section>
     );
   }
 
   return (
-    <section>
+    <section ref={containerRef as RefObject<HTMLDivElement>}>
       <MultiSlideCarousel
         slides={slides}
         autoplayDelayMs={autoplayDelayMs}
         showOverlay={showOverlay}
-        heightClass={heightClass}
+        heightStyle={heightStyle}
         context={context}
       />
     </section>

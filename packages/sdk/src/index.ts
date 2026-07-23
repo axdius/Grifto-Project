@@ -9,4 +9,5 @@ export * from "./hooks/guest";
 export * from "./hooks/wallet";
 export * from "./hooks/admin";
 export * from "./hooks/cms";
+export * from "./hooks/media";
 export * from "./hooks/theme";

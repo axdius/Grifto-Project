@@ -16,7 +16,10 @@ export interface ThemeBannerSlide {
   id: string;
   title?: string | null;
   body?: string | null;
+  /** Desktop / default hero image. */
   imageUrl?: string | null;
+  /** Optional mobile (<768px) hero image; falls back to imageUrl. */
+  mobileImageUrl?: string | null;
   ctaLabel?: string | null;
   ctaHref?: string | null;
 }

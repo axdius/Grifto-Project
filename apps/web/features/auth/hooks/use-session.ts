@@ -11,6 +11,7 @@ export function useSession() {
   return {
     user: user ?? null,
     isLoading,
+    isError,
     isAuthenticated: Boolean(user) && !isError,
   };
 }

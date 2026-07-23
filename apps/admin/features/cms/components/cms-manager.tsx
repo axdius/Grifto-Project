@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { CmsEntry, CmsEntryKind } from "@grifto/contracts";
 import {
+  fileToBase64,
   useAdminCmsEntries,
   useCreateCmsEntry,
   useDeleteCmsEntry,
   useUpdateCmsEntry,
+  useUploadMedia,
 } from "@grifto/sdk";
 import { Badge, Button, Dialog, Field, Input, cn } from "@grifto/ui";
 import { PageHeader } from "@/components/admin-shell";
@@ -58,9 +60,18 @@ export function CmsManager() {
             key: "content",
             header: kindMeta.titleLabel,
             render: (e) => (
-              <div className="max-w-lg">
-                <p className="font-medium text-neutral-900">{e.title}</p>
-                <p className="truncate text-xs text-neutral-400">{e.body}</p>
+              <div className="flex max-w-lg items-center gap-3">
+                {kind === "banner" && e.imageUrl ? (
+                  <img
+                    src={e.imageUrl}
+                    alt=""
+                    className="size-12 shrink-0 rounded-md object-cover"
+                  />
+                ) : null}
+                <div className="min-w-0">
+                  <p className="font-medium text-neutral-900">{e.title}</p>
+                  <p className="truncate text-xs text-neutral-400">{e.body}</p>
+                </div>
               </div>
             ),
           },
@@ -119,6 +130,78 @@ export function CmsManager() {
   );
 }
 
+function BannerImageField({
+  id,
+  label,
+  hint,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  hint: string;
+  value: string | null;
+  onChange: (url: string | null) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const upload = useUploadMedia();
+
+  async function onFile(files: FileList | null) {
+    const file = files?.[0];
+    if (!file) return;
+    try {
+      const dataBase64 = await fileToBase64(file);
+      const asset = await upload.mutateAsync({
+        filename: file.name,
+        mimeType: file.type || "image/jpeg",
+        dataBase64,
+      });
+      onChange(asset.url);
+    } finally {
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <Field label={label} htmlFor={id}>
+      <p className="mb-2 text-xs text-neutral-500">{hint}</p>
+      {value ? (
+        <div className="mb-2 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50">
+          <img src={value} alt="" className="h-28 w-full object-cover" />
+        </div>
+      ) : (
+        <div className="mb-2 flex h-28 items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 text-xs text-neutral-400">
+          No image
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          loading={upload.isPending}
+          onClick={() => inputRef.current?.click()}
+        >
+          {value ? "Replace" : "Upload"}
+        </Button>
+        {value ? (
+          <Button type="button" size="sm" variant="ghost" onClick={() => onChange(null)}>
+            Clear
+          </Button>
+        ) : null}
+      </div>
+      <input
+        id={id}
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => void onFile(e.target.files)}
+      />
+    </Field>
+  );
+}
+
 function EntryDialog({
   entry,
   kind,
@@ -138,6 +221,10 @@ function EntryDialog({
   const [body, setBody] = useState(entry?.body ?? "");
   const [ctaLabel, setCtaLabel] = useState(entry?.ctaLabel ?? "");
   const [ctaHref, setCtaHref] = useState(entry?.ctaHref ?? "");
+  const [imageUrl, setImageUrl] = useState<string | null>(entry?.imageUrl ?? null);
+  const [mobileImageUrl, setMobileImageUrl] = useState<string | null>(
+    entry?.mobileImageUrl ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
   const busy = create.isPending || update.isPending;
   const isBanner = kind === "banner";
@@ -147,7 +234,12 @@ function EntryDialog({
     if (!body.trim()) return setError(`${bodyLabel} is required`);
     setError(null);
     const cta = isBanner
-      ? { ctaLabel: ctaLabel.trim() || null, ctaHref: ctaHref.trim() || null }
+      ? {
+          ctaLabel: ctaLabel.trim() || null,
+          ctaHref: ctaHref.trim() || null,
+          imageUrl,
+          mobileImageUrl,
+        }
       : {};
     if (entry) {
       update.mutate(
@@ -178,24 +270,42 @@ function EntryDialog({
           />
         </Field>
         {isBanner ? (
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="CTA button label" htmlFor="c-cta-label">
-              <Input
-                id="c-cta-label"
-                value={ctaLabel}
-                placeholder="e.g. Explore"
-                onChange={(e) => setCtaLabel(e.target.value)}
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <BannerImageField
+                id="c-desktop-image"
+                label="Desktop image"
+                hint="Used on tablets and desktop (and as fallback on mobile)."
+                value={imageUrl}
+                onChange={setImageUrl}
               />
-            </Field>
-            <Field label="CTA link" htmlFor="c-cta-href">
-              <Input
-                id="c-cta-href"
-                value={ctaHref}
-                placeholder="e.g. /register"
-                onChange={(e) => setCtaHref(e.target.value)}
+              <BannerImageField
+                id="c-mobile-image"
+                label="Mobile image"
+                hint="Optional. Shown below 768px width."
+                value={mobileImageUrl}
+                onChange={setMobileImageUrl}
               />
-            </Field>
-          </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="CTA button label" htmlFor="c-cta-label">
+                <Input
+                  id="c-cta-label"
+                  value={ctaLabel}
+                  placeholder="e.g. Explore"
+                  onChange={(e) => setCtaLabel(e.target.value)}
+                />
+              </Field>
+              <Field label="CTA link" htmlFor="c-cta-href">
+                <Input
+                  id="c-cta-href"
+                  value={ctaHref}
+                  placeholder="e.g. /register"
+                  onChange={(e) => setCtaHref(e.target.value)}
+                />
+              </Field>
+            </div>
+          </>
         ) : null}
         {error ? (
           <p className="text-sm text-danger-600" role="alert">

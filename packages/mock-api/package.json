@@ -7,18 +7,26 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./browser": "./src/browser.ts"
+    "./browser": "./src/browser.ts",
+    "./server": "./src/server.ts"
   },
   "scripts": {
+    "dev": "tsx watch src/server.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@grifto/contracts": "workspace:*",
+    "@mswjs/http-middleware": "^0.10.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
     "msw": "^2.7.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
     "@grifto/config": "workspace:*",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.0"
   }
 }

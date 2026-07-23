@@ -40,12 +40,20 @@ function BarChart({
 }
 
 export function AnalyticsView() {
-  const { data, isLoading } = useAdminAnalytics();
+  const { data, isLoading, isError } = useAdminAnalytics();
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Spinner className="size-8 text-brand-500" />
+      </div>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-24 text-center text-neutral-500">
+        We couldn&apos;t load analytics. Please refresh and try again.
       </div>
     );
   }

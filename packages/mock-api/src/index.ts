@@ -6,6 +6,7 @@ import { guestHandlers } from "./handlers/guest";
 import { notificationHandlers, walletHandlers } from "./handlers/wallet";
 import { adminHandlers } from "./handlers/admin";
 import { analyticsHandlers, cmsHandlers } from "./handlers/cms";
+import { mediaHandlers } from "./handlers/media";
 import { themeHandlers } from "./handlers/theme";
 
 export const handlers = [
@@ -18,6 +19,7 @@ export const handlers = [
   ...notificationHandlers,
   ...adminHandlers,
   ...cmsHandlers,
+  ...mediaHandlers,
   ...analyticsHandlers,
   ...themeHandlers,
 ];

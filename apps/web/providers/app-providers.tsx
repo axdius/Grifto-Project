@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ApiClientProvider, createApiClient, createBrowserTokenStore } from "@grifto/sdk";
 import {
@@ -16,19 +16,12 @@ import {
 /**
  * Composition root. This is the ONLY file that knows whether the app runs
  * against mocks or a real API. Everything below consumes contexts.
+ *
+ * Mock mode talks to the shared @grifto/mock-api HTTP server so web and admin
+ * share one DB. Browser MSW remains available via @grifto/mock-api/browser for
+ * optional same-origin setups, but is not started here.
  */
 export function AppProviders({ children }: { children: ReactNode }) {
-  const [mockReady, setMockReady] = useState(env.apiMode !== "mock");
-
-  useEffect(() => {
-    if (env.apiMode === "mock") {
-      // Dynamic import keeps mock code out of real-mode bundles entirely.
-      void import("@grifto/mock-api/browser").then(({ startMockWorker }) =>
-        startMockWorker().then(() => setMockReady(true)),
-      );
-    }
-  }, []);
-
   const queryClient = useMemo(
     () =>
       new QueryClient({
@@ -42,10 +35,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const apiClient = useMemo(
     () =>
       createApiClient({
-        baseUrl:
-          env.apiMode === "mock" && typeof window !== "undefined"
-            ? window.location.origin
-            : env.apiUrl,
+        baseUrl: env.apiUrl,
         tokenStore: createBrowserTokenStore(),
       }),
     [],
@@ -56,9 +46,6 @@ export function AppProviders({ children }: { children: ReactNode }) {
     () => createLocalPlatformServices({ paymentCheckout: checkout }),
     [checkout],
   );
-
-  // Hold rendering until MSW is intercepting, so no request escapes to the network.
-  if (!mockReady) return null;
 
   return (
     <QueryClientProvider client={queryClient}>

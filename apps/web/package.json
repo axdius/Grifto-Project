@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@grifto/contracts": "workspace:*",
-    "@grifto/mock-api": "workspace:*",
     "@grifto/platform-services": "workspace:*",
     "@grifto/sdk": "workspace:*",
     "@grifto/theme-runtime": "workspace:*",

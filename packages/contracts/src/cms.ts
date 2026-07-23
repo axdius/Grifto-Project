@@ -14,7 +14,10 @@ export const cmsEntrySchema = z.object({
   title: z.string(),
   /** testimonial: quote · faq: answer · banner: subtext */
   body: z.string(),
+  /** Desktop / default image (banner hero slides). */
   imageUrl: z.string().nullable(),
+  /** Mobile viewport image for banners; falls back to imageUrl when null. */
+  mobileImageUrl: z.string().nullable(),
   /** banner: CTA button label (null on other kinds). */
   ctaLabel: z.string().nullable(),
   /** banner: CTA target URL (null on other kinds). */
@@ -30,6 +33,7 @@ export const upsertCmsEntryBodySchema = z.object({
   title: z.string().min(1, "Title is required"),
   body: z.string().min(1, "Content is required"),
   imageUrl: z.string().nullable().optional(),
+  mobileImageUrl: z.string().nullable().optional(),
   ctaLabel: z.string().nullable().optional(),
   ctaHref: z.string().nullable().optional(),
   published: z.boolean().default(true),

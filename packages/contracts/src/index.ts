@@ -8,6 +8,7 @@ export * from "./guest";
 export * from "./wallet";
 export * from "./admin";
 export * from "./cms";
+export * from "./media";
 export * from "./theme";
 
 import { authEndpoints } from "./auth";
@@ -18,6 +19,7 @@ import { guestEndpoints } from "./guest";
 import { notificationEndpoints, walletEndpoints } from "./wallet";
 import { adminEndpoints } from "./admin";
 import { analyticsEndpoints, cmsEndpoints } from "./cms";
+import { mediaEndpoints } from "./media";
 import { themeEndpoints } from "./theme";
 
 /** The full API surface. Modules are added here as milestones land. */
@@ -31,6 +33,7 @@ export const apiContract = {
   notifications: notificationEndpoints,
   admin: adminEndpoints,
   cms: cmsEndpoints,
+  media: mediaEndpoints,
   analytics: analyticsEndpoints,
   theme: themeEndpoints,
 } as const;

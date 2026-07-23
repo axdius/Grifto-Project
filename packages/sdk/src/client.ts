@@ -2,6 +2,8 @@ import type { AnyEndpoint, InferOrUndefined } from "@grifto/contracts";
 import type { z } from "zod";
 import { toApiError } from "./errors";
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+
 export interface TokenStore {
   getAccessToken(): string | null;
   getRefreshToken(): string | null;
@@ -10,11 +12,13 @@ export interface TokenStore {
 }
 
 export interface ApiClientConfig {
-  /** Base URL of the API. In mock mode this is same-origin (MSW intercepts). */
+  /** Base URL of the API (shared mock server today; NestJS later). */
   baseUrl: string;
   tokenStore: TokenStore;
   /** Called when a 401 cannot be recovered by refresh — apps route to login. */
   onSessionExpired?: () => void;
+  /** Per-request timeout in ms. Defaults to 10s so UI cannot spin forever. */
+  timeoutMs?: number;
 }
 
 export interface RequestOptions<E extends AnyEndpoint> {
@@ -50,13 +54,23 @@ function buildUrl(baseUrl: string, endpoint: AnyEndpoint, options: RequestOption
   return url.toString();
 }
 
+function withTimeout(userSignal: AbortSignal | undefined, timeoutMs: number): AbortSignal {
+  const timeout = AbortSignal.timeout(timeoutMs);
+  if (!userSignal) return timeout;
+  if (typeof AbortSignal.any === "function") {
+    return AbortSignal.any([userSignal, timeout]);
+  }
+  return timeout;
+}
+
 /**
  * Creates the typed API client. This is the ONLY place in the frontend that
- * performs HTTP. Today MSW intercepts these requests; later they hit NestJS.
+ * performs HTTP. Today requests hit the shared mock API; later they hit NestJS.
  * A single-flight refresh lock mirrors the production token-rotation design.
  */
 export function createApiClient(config: ApiClientConfig): ApiClient {
   let refreshInFlight: Promise<boolean> | null = null;
+  const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   async function tryRefresh(): Promise<boolean> {
     refreshInFlight ??= (async () => {
@@ -67,6 +81,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refreshToken }),
+          signal: AbortSignal.timeout(timeoutMs),
         });
         if (!res.ok) return false;
         const tokens = (await res.json()) as {
@@ -96,7 +111,7 @@ export function createApiClient(config: ApiClientConfig): ApiClient {
       method: endpoint.method,
       headers,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-      signal: options.signal,
+      signal: withTimeout(options.signal, timeoutMs),
     });
   }
 

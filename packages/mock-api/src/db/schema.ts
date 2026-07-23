@@ -165,11 +165,20 @@ export interface DbCmsEntry {
   title: string;
   body: string;
   imageUrl: string | null;
+  mobileImageUrl: string | null;
   ctaLabel: string | null;
   ctaHref: string | null;
   published: boolean;
   sortOrder: number;
   updatedAt: string;
+}
+
+export interface DbMediaAsset {
+  id: string;
+  filename: string;
+  mimeType: string;
+  dataBase64: string;
+  createdAt: string;
 }
 
 export interface DbThemeSection {
@@ -195,6 +204,7 @@ export interface MockDbData {
   settings: DbSettings;
   theme: DbThemeState;
   cmsEntries: DbCmsEntry[];
+  media: DbMediaAsset[];
   users: DbUser[];
   sessions: DbSession[];
   wishlists: DbWishlist[];
@@ -222,6 +232,7 @@ export const emptyDb: MockDbData = {
   settings: { withdrawalFeeBps: 200, contributionFeeBps: 0 },
   theme: emptyThemeState,
   cmsEntries: [],
+  media: [],
   users: [],
   sessions: [],
   wishlists: [],

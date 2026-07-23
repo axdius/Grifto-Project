@@ -110,10 +110,18 @@ export function ThemeEditor() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [undo, redo]);
 
-  if (draft.isPending || !document) {
+  if (draft.isPending) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <Spinner className="size-6 text-brand-600" />
+      </div>
+    );
+  }
+
+  if (draft.isError || !document) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center px-4 text-center text-neutral-500">
+        We couldn&apos;t load the theme draft. Please refresh and try again.
       </div>
     );
   }
@@ -125,7 +133,15 @@ export function ThemeEditor() {
       body: t.body,
     })),
     faqs: (faqs.data?.items ?? []).map((f) => ({ id: f.id, title: f.title, body: f.body })),
-    banners: banners.data?.items ?? [],
+    banners: (banners.data?.items ?? []).map((b) => ({
+      id: b.id,
+      title: b.title,
+      body: b.body,
+      imageUrl: b.imageUrl,
+      mobileImageUrl: b.mobileImageUrl,
+      ctaLabel: b.ctaLabel,
+      ctaHref: b.ctaHref,
+    })),
   };
 
   function handleSave(onSuccess?: () => void) {

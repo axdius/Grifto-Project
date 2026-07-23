@@ -5,7 +5,10 @@ import type { DbCmsEntry } from "../db/schema";
 import { ok, problem, simulateLatency } from "../http";
 
 function toDto(entry: DbCmsEntry): CmsEntry {
-  return { ...entry };
+  return {
+    ...entry,
+    mobileImageUrl: entry.mobileImageUrl ?? null,
+  };
 }
 
 function filterByKind(entries: DbCmsEntry[], kind: string | null): DbCmsEntry[] {
@@ -44,6 +47,7 @@ export const cmsHandlers = [
         title: body.title,
         body: body.body,
         imageUrl: body.imageUrl ?? null,
+        mobileImageUrl: body.mobileImageUrl ?? null,
         ctaLabel: body.ctaLabel ?? null,
         ctaHref: body.ctaHref ?? null,
         published: body.published,
@@ -81,28 +85,49 @@ export const cmsHandlers = [
   }),
 ];
 
-/** Analytics from real mock data where possible + generated series for depth. */
+function lastNDates(days: number): string[] {
+  const today = new Date();
+  const dates: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
+function dayKey(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+/** Analytics derived from the live mock DB (shared by web + admin). */
 export const analyticsHandlers = [
   http.get("*/v1/admin/analytics", async () => {
     await simulateLatency();
     const data = db.get();
+    const dates = lastNDates(30);
 
-    // Deterministic pseudo-random series for the last 30 days (stable across reloads).
-    const days = 30;
-    const today = new Date();
-    const contributionsByDay: AdminAnalytics["contributionsByDay"] = [];
-    const signupsByDay: AdminAnalytics["signupsByDay"] = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const date = d.toISOString().slice(0, 10);
-      const seed = (d.getDate() * 37 + d.getMonth() * 13) % 100;
-      contributionsByDay.push({
-        date,
-        amount: { amountMinor: (seed * 3500 + 40000) * 10, currency: "INR" },
-      });
-      signupsByDay.push({ date, count: (seed % 7) + 1 });
+    const paidByDay = new Map<string, number>();
+    for (const c of data.contributions) {
+      if (c.status !== "paid") continue;
+      const key = dayKey(c.createdAt);
+      paidByDay.set(key, (paidByDay.get(key) ?? 0) + c.amountMinor);
     }
+
+    const signupsByDayMap = new Map<string, number>();
+    for (const u of data.users) {
+      const key = dayKey(u.createdAt);
+      signupsByDayMap.set(key, (signupsByDayMap.get(key) ?? 0) + 1);
+    }
+
+    const contributionsByDay: AdminAnalytics["contributionsByDay"] = dates.map((date) => ({
+      date,
+      amount: { amountMinor: paidByDay.get(date) ?? 0, currency: "INR" },
+    }));
+    const signupsByDay: AdminAnalytics["signupsByDay"] = dates.map((date) => ({
+      date,
+      count: signupsByDayMap.get(date) ?? 0,
+    }));
 
     const topItems = [...data.wishlistItems]
       .sort((a, b) => b.fundedMinor - a.fundedMinor)

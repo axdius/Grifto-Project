@@ -39,7 +39,15 @@ export function ThemedHome() {
       body: t.body,
     })),
     faqs: (faqs.data?.items ?? []).map((f) => ({ id: f.id, title: f.title, body: f.body })),
-    banners: banners.data?.items ?? [],
+    banners: (banners.data?.items ?? []).map((b) => ({
+      id: b.id,
+      title: b.title,
+      body: b.body,
+      imageUrl: b.imageUrl,
+      mobileImageUrl: b.mobileImageUrl,
+      ctaLabel: b.ctaLabel,
+      ctaHref: b.ctaHref,
+    })),
     LinkComponent: ({ href, className, children }) => (
       <Link href={href} className={className}>
         {children}

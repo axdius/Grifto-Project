@@ -7,7 +7,7 @@
  * Enforced here so violations fail CI instead of relying on review:
  *  - no raw fetch()/axios in UI code (use @grifto/sdk hooks)
  *  - no direct localStorage/sessionStorage (use platform-services StorageService / session provider)
- *  - no importing mock internals into app code (mocks are wired only in the MSW bootstrap provider)
+ *  - no importing mock internals into app code (use the shared mock HTTP server via SDK)
  */
 export const appBoundaryRules = {
   files: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "features/**/*.{ts,tsx}"],
@@ -30,7 +30,7 @@ export const appBoundaryRules = {
         patterns: [
           {
             group: ["@grifto/mock-api", "@grifto/mock-api/*"],
-            message: "Mock internals may only be imported by the MSW bootstrap in providers/.",
+            message: "Do not import mock-api in app code. Talk to the shared mock server via @grifto/sdk.",
           },
         ],
       },
@@ -38,7 +38,7 @@ export const appBoundaryRules = {
   },
 };
 
-/** Files allowed to wire the mock layer (MSW bootstrap) and touch browser storage primitives. */
+/** Files allowed to wire providers and touch browser storage primitives. */
 export const boundaryExemptions = {
   files: ["providers/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],
   rules: {
